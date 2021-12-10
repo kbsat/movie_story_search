@@ -15,6 +15,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -23,33 +24,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 import movie.storysearch.document.Movie;
+import movie.storysearch.service.SearchService;
 
 @Controller
 @RequiredArgsConstructor
 public class SearchController {
 	private final RestHighLevelClient client;
+	private final SearchService searchService;
 
-	@ResponseBody
 	@GetMapping("/")
-	public List<Movie> run() throws IOException {
-		ObjectMapper objectMapper = new ObjectMapper();
-
-		SearchRequest searchRequest = new SearchRequest("movies");
-		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-		searchSourceBuilder.query(QueryBuilders.matchQuery("summary", "조선"));
-		searchRequest.source(searchSourceBuilder);
-		SearchResponse response = client.search(searchRequest, RequestOptions.DEFAULT);
-		SearchHit[] hits = response.getHits().getHits();
-		List<Movie> movies = new ArrayList<>();
-
-		Arrays.stream(hits).forEach(hit -> {
-			try {
-				movies.add(objectMapper.readValue(hit.getSourceAsString(), Movie.class));
-			} catch (JsonProcessingException e) {
-				e.printStackTrace();
-			}
-		});
-
-		return movies;
+	public String index(Model model) {
+		List<Movie> movies
+			= searchService.searchThat("조선");
+		model.addAttribute("movies", movies);
+		return "hello";
 	}
 }
