@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -25,19 +26,20 @@ import movie.storysearch.document.Movie;
 public class SearchService {
 	private final RestHighLevelClient client;
 
-	public List<Movie> searchThat(String text){
+	public List<Movie> searchThat(String text, int from, int size){
 		ObjectMapper objectMapper = new ObjectMapper();
 
 		SearchRequest searchRequest = new SearchRequest("movies");
 		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 		searchSourceBuilder.query(QueryBuilders.matchQuery("summary", text));
+		searchSourceBuilder.from(from);
+		searchSourceBuilder.size(size);
 		searchRequest.source(searchSourceBuilder);
-		SearchResponse response = null;
+
 		List<Movie> movies = new ArrayList<>();
 		try {
-			response = client.search(searchRequest, RequestOptions.DEFAULT);
+			SearchResponse response = client.search(searchRequest, RequestOptions.DEFAULT);
 			SearchHit[] hits = response.getHits().getHits();
-
 			Arrays.stream(hits).forEach(hit -> {
 				try {
 					movies.add(objectMapper.readValue(hit.getSourceAsString(), Movie.class));
